@@ -1072,7 +1072,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		const resolvedWallpaper = useMemo<string | null>(() => {
 			const source = wallpaper || DEFAULT_WALLPAPER;
 			const classified = classifyWallpaper(source);
-			if (classified.kind !== "image") return classified.value;
+			if (classified.kind !== "image") return classified.kind === "none" ? null : classified.value;
 			try {
 				return resolveImageWallpaperUrl(classified.path);
 			} catch (err) {
@@ -1191,7 +1191,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 						style={{
 							...(isImageUrl
 								? { backgroundImage: `url(${resolvedWallpaper})` }
-								: { background: resolvedWallpaper }),
+								: resolvedWallpaper
+									? { backgroundColor: resolvedWallpaper }
+									: {}),
 							filter: showBlur ? "blur(2px)" : "none",
 						}}
 					/>

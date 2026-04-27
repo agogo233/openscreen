@@ -1,5 +1,12 @@
+import { ChevronDown, ChevronsDown, ChevronsUp, ChevronUp } from "lucide-react";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	getBlurOverlayColor,
 	getMosaicGridOverlayColor,
@@ -50,6 +57,10 @@ interface AnnotationOverlayProps {
 	isSelectedBoost: boolean; // Boost z-index when selected for easy editing
 	previewSourceCanvas?: PreviewCanvasSource | null;
 	previewFrameVersion?: number;
+	onForward?: () => void;
+	onBackward?: () => void;
+	onToFront?: () => void;
+	onToBack?: () => void;
 }
 
 export function AnnotationOverlay({
@@ -66,7 +77,35 @@ export function AnnotationOverlay({
 	isSelectedBoost,
 	previewSourceCanvas,
 	previewFrameVersion,
+	onForward,
+	onBackward,
+	onToFront,
+	onToBack,
 }: AnnotationOverlayProps) {
+	const [contextMenuOpen, setContextMenuOpen] = useState(false);
+	const contextMenuTriggerRef = useRef<HTMLButtonElement>(null);
+	const contextMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	const handleContextMenu = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onClick(annotation.id);
+		if (contextMenuTimeoutRef.current) {
+			clearTimeout(contextMenuTimeoutRef.current);
+		}
+		contextMenuTimeoutRef.current = setTimeout(() => {
+			contextMenuTriggerRef.current?.click();
+		}, 10);
+	};
+
+	useEffect(() => {
+		return () => {
+			if (contextMenuTimeoutRef.current) {
+				clearTimeout(contextMenuTimeoutRef.current);
+			}
+		};
+	}, []);
+
 	const committedX = (annotation.position.x / 100) * containerWidth;
 	const committedY = (annotation.position.y / 100) * containerHeight;
 	const committedWidth = (annotation.size.width / 100) * containerWidth;
@@ -501,135 +540,159 @@ export function AnnotationOverlay({
 	};
 
 	return (
-		<Rnd
-			position={{ x, y }}
-			size={{ width, height }}
-			onDragStart={() => {
-				isDraggingRef.current = true;
-			}}
-			onDrag={(_e, d) => {
-				setLiveRect((prev) => ({
-					...prev,
-					x: d.x,
-					y: d.y,
-				}));
-			}}
-			onDragStop={(_e, d) => {
-				setLiveRect((prev) => ({
-					...prev,
-					x: d.x,
-					y: d.y,
-				}));
-				const xPercent = (d.x / containerWidth) * 100;
-				const yPercent = (d.y / containerHeight) * 100;
-				onPositionChange(annotation.id, { x: xPercent, y: yPercent });
+		<>
+			<Rnd
+				position={{ x, y }}
+				size={{ width, height }}
+				onDragStart={() => {
+					isDraggingRef.current = true;
+				}}
+				onDrag={(_e, d) => {
+					setLiveRect((prev) => ({
+						...prev,
+						x: d.x,
+						y: d.y,
+					}));
+				}}
+				onDragStop={(_e, d) => {
+					setLiveRect((prev) => ({
+						...prev,
+						x: d.x,
+						y: d.y,
+					}));
+					const xPercent = (d.x / containerWidth) * 100;
+					const yPercent = (d.y / containerHeight) * 100;
+					onPositionChange(annotation.id, { x: xPercent, y: yPercent });
 
-				// Reset dragging flag after a short delay to prevent click event
-				setTimeout(() => {
-					isDraggingRef.current = false;
-				}, 100);
-			}}
-			onResize={(_e, _direction, ref, _delta, position) => {
-				setLiveRect({
-					x: position.x,
-					y: position.y,
-					width: ref.offsetWidth,
-					height: ref.offsetHeight,
-				});
-			}}
-			onResizeStop={(_e, _direction, ref, _delta, position) => {
-				setLiveRect({
-					x: position.x,
-					y: position.y,
-					width: ref.offsetWidth,
-					height: ref.offsetHeight,
-				});
-				const xPercent = (position.x / containerWidth) * 100;
-				const yPercent = (position.y / containerHeight) * 100;
-				const widthPercent = (ref.offsetWidth / containerWidth) * 100;
-				const heightPercent = (ref.offsetHeight / containerHeight) * 100;
-				onPositionChange(annotation.id, { x: xPercent, y: yPercent });
-				onSizeChange(annotation.id, { width: widthPercent, height: heightPercent });
-			}}
-			onClick={() => {
-				if (isDraggingRef.current) return;
-				onClick(annotation.id);
-			}}
-			bounds="parent"
-			className={cn(
-				"cursor-move",
-				isSelected &&
-					annotation.type !== "blur" &&
-					"ring-2 ring-[#34B27B] ring-offset-2 ring-offset-transparent",
-			)}
-			style={{
-				zIndex: isSelectedBoost ? zIndex + 1000 : zIndex, // Boost selected annotation to ensure it's on top
-				pointerEvents: isSelected ? "auto" : "none",
-				border:
-					isSelected && annotation.type !== "blur" ? "2px solid rgba(52, 178, 123, 0.8)" : "none",
-				backgroundColor:
-					isSelected && annotation.type !== "blur" ? "rgba(52, 178, 123, 0.1)" : "transparent",
-				boxShadow:
-					isSelected && annotation.type !== "blur" ? "0 0 0 1px rgba(52, 178, 123, 0.35)" : "none",
-			}}
-			enableResizing={isSelected && !isSelectedFreehandBlur}
-			disableDragging={!isSelected || isSelectedFreehandBlur}
-			resizeHandleStyles={{
-				topLeft: {
-					width: "12px",
-					height: "12px",
-					backgroundColor: isSelected ? "white" : "transparent",
-					border: isSelected ? "2px solid #34B27B" : "none",
-					borderRadius: "50%",
-					left: "-6px",
-					top: "-6px",
-					cursor: "nwse-resize",
-				},
-				topRight: {
-					width: "12px",
-					height: "12px",
-					backgroundColor: isSelected ? "white" : "transparent",
-					border: isSelected ? "2px solid #34B27B" : "none",
-					borderRadius: "50%",
-					right: "-6px",
-					top: "-6px",
-					cursor: "nesw-resize",
-				},
-				bottomLeft: {
-					width: "12px",
-					height: "12px",
-					backgroundColor: isSelected ? "white" : "transparent",
-					border: isSelected ? "2px solid #34B27B" : "none",
-					borderRadius: "50%",
-					left: "-6px",
-					bottom: "-6px",
-					cursor: "nesw-resize",
-				},
-				bottomRight: {
-					width: "12px",
-					height: "12px",
-					backgroundColor: isSelected ? "white" : "transparent",
-					border: isSelected ? "2px solid #34B27B" : "none",
-					borderRadius: "50%",
-					right: "-6px",
-					bottom: "-6px",
-					cursor: "nwse-resize",
-				},
-			}}
-		>
-			<div
+					// Reset dragging flag after a short delay to prevent click event
+					setTimeout(() => {
+						isDraggingRef.current = false;
+					}, 100);
+				}}
+				onResize={(_e, _direction, ref, _delta, position) => {
+					setLiveRect({
+						x: position.x,
+						y: position.y,
+						width: ref.offsetWidth,
+						height: ref.offsetHeight,
+					});
+				}}
+				onResizeStop={(_e, _direction, ref, _delta, position) => {
+					setLiveRect({
+						x: position.x,
+						y: position.y,
+						width: ref.offsetWidth,
+						height: ref.offsetHeight,
+					});
+					const xPercent = (position.x / containerWidth) * 100;
+					const yPercent = (position.y / containerHeight) * 100;
+					const widthPercent = (ref.offsetWidth / containerWidth) * 100;
+					const heightPercent = (ref.offsetHeight / containerHeight) * 100;
+					onPositionChange(annotation.id, { x: xPercent, y: yPercent });
+					onSizeChange(annotation.id, { width: widthPercent, height: heightPercent });
+				}}
+				onClick={() => {
+					if (isDraggingRef.current) return;
+					onClick(annotation.id);
+				}}
+				onContextMenu={handleContextMenu}
+				bounds="parent"
 				className={cn(
-					"w-full h-full",
-					annotation.type !== "blur" && "rounded-lg",
-					annotation.type === "text" && "bg-transparent",
-					annotation.type === "image" && "bg-transparent",
-					annotation.type === "figure" && "bg-transparent",
-					annotation.type === "blur" && "bg-transparent",
-					isSelected && annotation.type !== "blur" && "shadow-lg",
+					"cursor-move",
+					isSelected &&
+						annotation.type !== "blur" &&
+						"ring-2 ring-[#34B27B] ring-offset-2 ring-offset-transparent",
 				)}
+				style={{
+					zIndex: isSelectedBoost ? zIndex + 1000 : zIndex, // Boost selected annotation to ensure it's on top
+					pointerEvents: isSelected ? "auto" : "none",
+					border:
+						isSelected && annotation.type !== "blur" ? "2px solid rgba(52, 178, 123, 0.8)" : "none",
+					backgroundColor:
+						isSelected && annotation.type !== "blur" ? "rgba(52, 178, 123, 0.1)" : "transparent",
+					boxShadow:
+						isSelected && annotation.type !== "blur"
+							? "0 0 0 1px rgba(52, 178, 123, 0.35)"
+							: "none",
+				}}
+				enableResizing={isSelected && !isSelectedFreehandBlur}
+				disableDragging={!isSelected || isSelectedFreehandBlur}
+				resizeHandleStyles={{
+					topLeft: {
+						width: "12px",
+						height: "12px",
+						backgroundColor: isSelected ? "white" : "transparent",
+						border: isSelected ? "2px solid #34B27B" : "none",
+						borderRadius: "50%",
+						left: "-6px",
+						top: "-6px",
+						cursor: "nwse-resize",
+					},
+					topRight: {
+						width: "12px",
+						height: "12px",
+						backgroundColor: isSelected ? "white" : "transparent",
+						border: isSelected ? "2px solid #34B27B" : "none",
+						borderRadius: "50%",
+						right: "-6px",
+						top: "-6px",
+						cursor: "nesw-resize",
+					},
+					bottomLeft: {
+						width: "12px",
+						height: "12px",
+						backgroundColor: isSelected ? "white" : "transparent",
+						border: isSelected ? "2px solid #34B27B" : "none",
+						borderRadius: "50%",
+						left: "-6px",
+						bottom: "-6px",
+						cursor: "nesw-resize",
+					},
+					bottomRight: {
+						width: "12px",
+						height: "12px",
+						backgroundColor: isSelected ? "white" : "transparent",
+						border: isSelected ? "2px solid #34B27B" : "none",
+						borderRadius: "50%",
+						right: "-6px",
+						bottom: "-6px",
+						cursor: "nwse-resize",
+					},
+				}}
 			>
-				{renderContent()}
-			</div>
-		</Rnd>
+				<div
+					className={cn(
+						"w-full h-full",
+						annotation.type !== "blur" && "rounded-lg",
+						annotation.type === "text" && "bg-transparent",
+						annotation.type === "image" && "bg-transparent",
+						annotation.type === "figure" && "bg-transparent",
+						annotation.type === "blur" && "bg-transparent",
+						isSelected && annotation.type !== "blur" && "shadow-lg",
+					)}
+				>
+					{renderContent()}
+				</div>
+			</Rnd>
+			<DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
+				<DropdownMenuTrigger asChild>
+					<button ref={contextMenuTriggerRef} className="sr-only" />
+				</DropdownMenuTrigger>
+				<DropdownMenuContent>
+					<DropdownMenuItem onClick={onToFront}>
+						<ChevronsUp className="mr-2 h-4 w-4" /> 移至最前
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={onForward}>
+						<ChevronUp className="mr-2 h-4 w-4" /> 上移一层
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={onBackward}>
+						<ChevronDown className="mr-2 h-4 w-4" /> 下移一层
+					</DropdownMenuItem>
+					<DropdownMenuItem onClick={onToBack}>
+						<ChevronsDown className="mr-2 h-4 w-4" /> 移至最后
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</>
 	);
 }
