@@ -30,6 +30,9 @@ release/**
 .claude/
 # npx electron-builder --mac --win
 
+# Git worktrees
+.worktrees/
+
 # Playwright
 test-results
 playwright-report/

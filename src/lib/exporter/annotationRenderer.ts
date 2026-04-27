@@ -43,6 +43,68 @@ function tokenizeForWrap(line: string): string[] {
 	return tokens;
 }
 
+// 逐行文本换行算法，模拟浏览器的 word-break: break-word 行为
+function buildWrappedLines(
+	tokens: string[],
+	availableWidth: number,
+	measure: (text: string) => number,
+): string[] {
+	const lines: string[] = [];
+	let current = "";
+
+	for (const token of tokens) {
+		// 测量当前 token 的宽度
+		const tokenWidth = measure(token);
+
+		// Case 1: 单个 token 就超过了可用宽度（超长英文单词、URL 等）
+		// 需要逐字符拆分，类似 break-word 的字符级断行
+		if (tokenWidth > availableWidth) {
+			// 先 flush 当前累积的内容
+			if (current) {
+				lines.push(current);
+				current = "";
+			}
+
+			// 逐字符处理该 token
+			const chars = Array.from(token);
+			for (const ch of chars) {
+				const chWidth = measure(ch);
+				if (chWidth > availableWidth) {
+					// 极端情况：单个字符都放不下，单独一行（极少见）
+					lines.push(ch);
+					current = "";
+				} else if (measure((current || "") + ch) > availableWidth) {
+					// 当前行加上此字符会超宽，换行
+					if (current) {
+						lines.push(current);
+					}
+					current = ch;
+				} else {
+					current += ch;
+				}
+			}
+			continue;
+		}
+
+		// Case 2: 常规 token（包括空白、普通单词、标点等）
+		// 检查加入当前 token 是否会超出可用宽度
+		if (current && measure(current + token) > availableWidth) {
+			// 超宽，先保存当前行
+			lines.push(current);
+			current = token;
+		} else {
+			// 不超宽，直接追加
+			current += token;
+		}
+	}
+
+	if (current) {
+		lines.push(current);
+	}
+
+	return lines;
+}
+
 // SVG path data for each arrow direction
 const ARROW_PATHS: Record<ArrowDirection, string[]> = {
 	up: ["M 50 20 L 50 80", "M 50 20 L 35 35", "M 50 20 L 65 35"],
@@ -283,21 +345,25 @@ function renderText(
 			continue;
 		}
 		const tokens = tokenizeForWrap(rawLine);
-		let current = "";
-		for (const token of tokens) {
-			const test = current + token;
-			if (current && ctx.measureText(test).width > availableWidth) {
-				lines.push(current);
-				current = token.trimStart();
-			} else {
-				current = test;
-			}
-		}
-		if (current) lines.push(current);
+		// 使用改进的换行算法，更好地模拟浏览器的 word-break: break-word
+		const wrappedLines = buildWrappedLines(
+			tokens,
+			availableWidth,
+			(text) => ctx.measureText(text).width,
+		);
+		lines.push(...wrappedLines);
 	}
 	const lineHeight = scaledFontSize * 1.4;
 
-	const startY = textY - ((lines.length - 1) * lineHeight) / 2;
+	// 计算总文本高度
+	const totalTextHeight = lines.length * lineHeight;
+
+	// 垂直居中，但确保不会因为文字过多而超出上边界
+	// 如果总高度超过容器高度，则从容器顶部开始（顶部对齐），并适当增加一点顶部内边距
+	const maxStartY = textY - totalTextHeight / 2;
+	// 确保至少保留 containerPadding 的顶部空间，避免文字紧贴边界并被裁剪
+	const safeTopY = Math.max(y + containerPadding * 0.5, maxStartY);
+	const startY = totalTextHeight <= height ? safeTopY : y + containerPadding;
 
 	lines.forEach((line, index) => {
 		const currentY = startY + index * lineHeight;
