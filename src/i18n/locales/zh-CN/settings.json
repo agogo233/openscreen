@@ -44,8 +44,10 @@
 		"image": "图片",
 		"color": "颜色",
 		"gradient": "渐变",
+		"none": "无",
 		"uploadCustom": "上传自定义",
-		"gradientLabel": "渐变 {{index}}"
+		"gradientLabel": "渐变 {{index}}",
+		"noneDescription": "导出的视频将具有透明背景"
 	},
 	"crop": {
 		"title": "裁剪",

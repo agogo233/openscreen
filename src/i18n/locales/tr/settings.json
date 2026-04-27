@@ -37,11 +37,13 @@
 	},
 	"background": {
 		"title": "Arka Plan",
-		"image": "Görüntü",
+		"image": "Resim",
 		"color": "Renk",
-		"gradient": "Gradyan",
+		"gradient": "Geçiş",
+		"none": "Yok",
 		"uploadCustom": "Özel Yükle",
-		"gradientLabel": "Gradyan {{index}}"
+		"gradientLabel": "Geçiş {{index}}",
+		"noneDescription": "Dışa aktarılan videonun şeffaf bir arka planı olacak"
 	},
 	"crop": {
 		"title": "Kırpma",

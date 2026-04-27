@@ -1163,9 +1163,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					resolvedWallpaper.startsWith("/") ||
 					resolvedWallpaper.startsWith("data:")),
 		);
-		const backgroundStyle = isImageUrl
-			? { backgroundImage: `url(${resolvedWallpaper || ""})` }
-			: { background: resolvedWallpaper || "" };
+
+		// 分类背景类型
+		const wallpaperType = classifyWallpaper(resolvedWallpaper || "");
 
 		return (
 			<div
@@ -1185,13 +1185,17 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				}}
 			>
 				{/* Background layer - always render as DOM element with blur */}
-				<div
-					className="absolute inset-0 bg-cover bg-center"
-					style={{
-						...backgroundStyle,
-						filter: showBlur ? "blur(2px)" : "none",
-					}}
-				/>
+				{wallpaperType.kind !== "none" && (
+					<div
+						className="absolute inset-0 bg-cover bg-center"
+						style={{
+							...(isImageUrl
+								? { backgroundImage: `url(${resolvedWallpaper})` }
+								: { background: resolvedWallpaper }),
+							filter: showBlur ? "blur(2px)" : "none",
+						}}
+					/>
+				)}
 				<div
 					ref={containerRef}
 					className="absolute inset-0"

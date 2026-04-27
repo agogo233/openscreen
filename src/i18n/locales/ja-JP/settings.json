@@ -51,8 +51,10 @@
 		"image": "画像",
 		"color": "色",
 		"gradient": "グラデーション",
-		"uploadCustom": "カスタムをアップロード",
-		"gradientLabel": "グラデーション {{index}}"
+		"none": "なし",
+		"uploadCustom": "カスタムアップロード",
+		"gradientLabel": "グラデーション {{index}}",
+		"noneDescription": "エクスポートされたビデオは透明な背景になります"
 	},
 	"crop": {
 		"title": "クロップ",

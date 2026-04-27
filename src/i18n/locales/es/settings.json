@@ -44,8 +44,10 @@
 		"image": "Imagen",
 		"color": "Color",
 		"gradient": "Degradado",
-		"uploadCustom": "Subir personalizado",
-		"gradientLabel": "Degradado {{index}}"
+		"none": "Ninguno",
+		"uploadCustom": "Subir Personalizado",
+		"gradientLabel": "Degradado {{index}}",
+		"noneDescription": "El video exportado tendrá un fondo transparente"
 	},
 	"crop": {
 		"title": "Recortar",

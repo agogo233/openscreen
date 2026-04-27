@@ -239,6 +239,13 @@ export class FrameRenderer {
 
 		const classified = classifyWallpaper(wallpaper);
 
+		// 无背景：不绘制任何内容，保持透明
+		if (classified.kind === "none") {
+			// 透明背景不需要任何绘制
+			this.backgroundSprite = null;
+			return;
+		}
+
 		if (classified.kind === "color") {
 			bgCtx.fillStyle = classified.value;
 			bgCtx.fillRect(0, 0, this.config.width, this.config.height);

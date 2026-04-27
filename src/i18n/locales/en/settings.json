@@ -44,8 +44,10 @@
 		"image": "Image",
 		"color": "Color",
 		"gradient": "Gradient",
+		"none": "None",
 		"uploadCustom": "Upload Custom",
-		"gradientLabel": "Gradient {{index}}"
+		"gradientLabel": "Gradient {{index}}",
+		"noneDescription": "Exported video will have a transparent background"
 	},
 	"crop": {
 		"title": "Crop",

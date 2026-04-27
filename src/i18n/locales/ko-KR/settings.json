@@ -42,9 +42,11 @@
 		"title": "배경",
 		"image": "이미지",
 		"color": "색상",
-		"gradient": "그라디언트",
-		"uploadCustom": "직접 업로드",
-		"gradientLabel": "그라디언트 {{index}}"
+		"gradient": "그라데이션",
+		"none": "없음",
+		"uploadCustom": "사용자 지정 업로드",
+		"gradientLabel": "그라데이션 {{index}}",
+		"noneDescription": "내보낸 동영상은 투명한 배경을 가집니다"
 	},
 	"crop": {
 		"title": "자르기",

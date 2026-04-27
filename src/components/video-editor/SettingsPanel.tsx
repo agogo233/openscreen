@@ -1014,7 +1014,7 @@ export function SettingsPanel({
 						</AccordionTrigger>
 						<AccordionContent className="pb-3">
 							<Tabs defaultValue="image" className="w-full">
-								<TabsList className="mb-2 bg-white/5 border border-white/5 p-0.5 w-full grid grid-cols-3 h-7 rounded-lg">
+								<TabsList className="mb-2 bg-white/5 border border-white/5 p-0.5 w-full grid grid-cols-4 h-7 rounded-lg">
 									<TabsTrigger
 										value="image"
 										className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 text-[10px] py-1 rounded-md transition-all"
@@ -1032,6 +1032,12 @@ export function SettingsPanel({
 										className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 text-[10px] py-1 rounded-md transition-all"
 									>
 										{t("background.gradient")}
+									</TabsTrigger>
+									<TabsTrigger
+										value="none"
+										className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 text-[10px] py-1 rounded-md transition-all"
+									>
+										{t("background.none")}
 									</TabsTrigger>
 								</TabsList>
 
@@ -1147,6 +1153,12 @@ export function SettingsPanel({
 													role="button"
 												/>
 											))}
+										</div>
+									</TabsContent>
+
+									<TabsContent value="none" className="mt-0">
+										<div className="p-3 text-center text-slate-400 text-xs">
+											{t("background.noneDescription")}
 										</div>
 									</TabsContent>
 								</div>

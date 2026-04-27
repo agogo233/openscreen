@@ -51,8 +51,10 @@
 		"image": "Image",
 		"color": "Couleur",
 		"gradient": "Dégradé",
-		"uploadCustom": "Téléverser une image",
-		"gradientLabel": "Dégradé {{index}}"
+		"none": "Aucun",
+		"uploadCustom": "Télécharger Personnalisé",
+		"gradientLabel": "Dégradé {{index}}",
+		"noneDescription": "La vidéo exportée aura un arrière-plan transparent"
 	},
 	"crop": {
 		"title": "Recadrage",

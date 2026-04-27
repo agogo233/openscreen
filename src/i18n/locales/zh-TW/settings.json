@@ -50,9 +50,11 @@
 		"title": "背景",
 		"image": "圖片",
 		"color": "顏色",
-		"gradient": "漸層",
-		"uploadCustom": "上傳自訂",
-		"gradientLabel": "漸層 {{index}}"
+		"gradient": "漸變",
+		"none": "無",
+		"uploadCustom": "上傳自定",
+		"gradientLabel": "漸變 {{index}}",
+		"noneDescription": "匯出的影片將具有透明背景"
 	},
 	"crop": {
 		"title": "裁剪",
