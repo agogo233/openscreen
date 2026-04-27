@@ -60,7 +60,7 @@
   },
   "win": {
     "target": [
-      "nsis"
+      "portable"
     ],
     "icon": "icons/icons/win/icon.ico"
   },
