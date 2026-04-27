@@ -340,10 +340,21 @@ function createCountdownOverlayWindowWrapper() {
 	return countdownOverlayWindow;
 }
 
+// Prevent multiple instances of the app
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    showMainWindow();
+  });
+}
+
 // On macOS, applications and their menu bar stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
-	// Keep app running (macOS behavior)
+  // Keep app running (macOS behavior)
 });
 
 app.on("activate", () => {

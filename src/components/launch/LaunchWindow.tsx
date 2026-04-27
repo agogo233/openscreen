@@ -20,6 +20,7 @@ import {
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useI18n, useScopedT } from "@/contexts/I18nContext";
 import { getAvailableLocales, getLocaleName } from "@/i18n/loader";
+import { useClickLock } from "../../hooks/useClickLock";
 import { useAudioLevelMeter } from "../../hooks/useAudioLevelMeter";
 import { useCameraDevices } from "../../hooks/useCameraDevices";
 import { useMicrophoneDevices } from "../../hooks/useMicrophoneDevices";
@@ -307,13 +308,24 @@ export function LaunchWindow() {
 		}
 	};
 
-	const toggleMicrophone = () => {
-		if (!recording) {
-			setMicrophoneEnabled(!microphoneEnabled);
-		}
-	};
+  const toggleMicrophone = useClickLock(
+    () => {
+      if (!recording) {
+        setMicrophoneEnabled(!microphoneEnabled);
+      }
+    },
+    200,
+  );
 
-	return (
+  const handleToggleRecording = useClickLock(toggleRecording, 300);
+  const handleTogglePaused = useClickLock(togglePaused, 200);
+  const handleRestartRecording = useClickLock(restartRecording, 300);
+  const handleCancelRecording = useClickLock(cancelRecording, 200);
+  const handleOpenVideoFile = useClickLock(openVideoFile, 300);
+  const handleOpenProjectFile = useClickLock(openProjectFile, 300);
+  const handleOpenSourceSelector = useClickLock(openSourceSelector, 300);
+
+  return (
 		<div className={`w-screen h-screen overflow-x-hidden bg-transparent ${styles.electronDrag}`}>
 			{systemLocaleSuggestion && (
 				<div
@@ -486,16 +498,16 @@ export function LaunchWindow() {
 					{getIcon("drag", "text-white/30")}
 				</div>
 
-				{/* Source selector */}
-				<button
-					className={`${hudGroupClasses} p-2 ${styles.electronNoDrag}`}
-					onClick={openSourceSelector}
-					disabled={recording}
-					title={selectedSource}
-				>
-					{getIcon("monitor", "text-white/80")}
-					<span className="text-white/70 text-[11px] max-w-[72px] truncate">{selectedSource}</span>
-				</button>
+  {/* Source selector */}
+  <button
+    className={`${hudGroupClasses} p-2 ${styles.electronNoDrag}`}
+    onClick={handleOpenSourceSelector}
+    disabled={recording}
+    title={selectedSource}
+  >
+    {getIcon("monitor", "text-white/80")}
+    <span className="text-white/70 text-[11px] max-w-[72px] truncate">{selectedSource}</span>
+  </button>
 
 				{/* Audio controls group */}
 				<div className={`${hudGroupClasses} ${styles.electronNoDrag}`}>
@@ -535,19 +547,19 @@ export function LaunchWindow() {
 					</button>
 				</div>
 
-				{/* Record/Stop group */}
-				<button
-					className={`flex items-center justify-center rounded-full p-2 transition-[min-width,background-color] duration-150 ${recording ? "min-w-[78px]" : "min-w-[36px]"} ${styles.electronNoDrag} ${
-						recording
-							? paused
-								? "bg-amber-500/10 hover:bg-amber-500/15"
-								: "bg-red-500/12 hover:bg-red-500/16"
-							: "bg-white/5 hover:bg-white/[0.08]"
-					}`}
-					onClick={toggleRecording}
-					disabled={!hasSelectedSource && !recording}
-					style={{ flex: "0 0 auto" }}
-				>
+  {/* Record/Stop group */}
+  <button
+    className={`flex items-center justify-center rounded-full p-2 transition-[min-width,background-color] duration-150 ${recording ? "min-w-[78px]" : "min-w-[36px]"} ${styles.electronNoDrag} ${
+      recording
+        ? paused
+          ? "bg-amber-500/10 hover:bg-amber-500/15"
+          : "bg-red-500/12 hover:bg-red-500/16"
+        : "bg-white/5 hover:bg-white/[0.08]"
+    }`}
+    onClick={handleToggleRecording}
+    disabled={!hasSelectedSource && !recording}
+    style={{ flex: "0 0 auto" }}
+  >
 					<div className={`flex items-center justify-center ${recording ? "gap-1.5" : ""}`}>
 						{recording
 							? getIcon("stop", paused ? "text-amber-400" : "text-red-400")
@@ -567,46 +579,46 @@ export function LaunchWindow() {
 						<Tooltip
 							content={paused ? t("tooltips.resumeRecording") : t("tooltips.pauseRecording")}
 						>
-							<button className={hudAuxIconBtnClasses} onClick={togglePaused}>
-								{getIcon(paused ? "resume" : "pause", paused ? "text-amber-400" : "text-white/60")}
-							</button>
-						</Tooltip>
-						<Tooltip content={t("tooltips.restartRecording")}>
-							<button className={hudAuxIconBtnClasses} onClick={restartRecording}>
-								{getIcon("restart", "text-white/60")}
-							</button>
-						</Tooltip>
-						<Tooltip content={t("tooltips.cancelRecording")}>
-							<button className={hudAuxIconBtnClasses} onClick={cancelRecording}>
-								{getIcon("cancel", "text-white/60")}
-							</button>
-						</Tooltip>
-					</div>
-				)}
+      <button className={hudAuxIconBtnClasses} onClick={handleTogglePaused}>
+        {getIcon(paused ? "resume" : "pause", paused ? "text-amber-400" : "text-white/60")}
+      </button>
+    </Tooltip>
+    <Tooltip content={t("tooltips.restartRecording")}>
+      <button className={hudAuxIconBtnClasses} onClick={handleRestartRecording}>
+        {getIcon("restart", "text-white/60")}
+      </button>
+    </Tooltip>
+    <Tooltip content={t("tooltips.cancelRecording")}>
+      <button className={hudAuxIconBtnClasses} onClick={handleCancelRecording}>
+        {getIcon("cancel", "text-white/60")}
+      </button>
+    </Tooltip>
+    </div>
+  )}
 
-				{!recording && (
-					<>
-						{/* Open video file */}
-						<Tooltip content={t("tooltips.openVideoFile")}>
-							<button
-								className={`${hudIconBtnClasses} ${styles.electronNoDrag}`}
-								onClick={openVideoFile}
-							>
-								{getIcon("videoFile", "text-white/60")}
-							</button>
-						</Tooltip>
+  {!recording && (
+    <>
+      {/* Open video file */}
+      <Tooltip content={t("tooltips.openVideoFile")}>
+        <button
+          className={`${hudIconBtnClasses} ${styles.electronNoDrag}`}
+          onClick={handleOpenVideoFile}
+        >
+          {getIcon("videoFile", "text-white/60")}
+        </button>
+      </Tooltip>
 
-						{/* Open project */}
-						<Tooltip content={t("tooltips.openProject")}>
-							<button
-								className={`${hudIconBtnClasses} ${styles.electronNoDrag}`}
-								onClick={openProjectFile}
-							>
-								{getIcon("folder", "text-white/60")}
-							</button>
-						</Tooltip>
-					</>
-				)}
+      {/* Open project */}
+      <Tooltip content={t("tooltips.openProject")}>
+        <button
+          className={`${hudIconBtnClasses} ${styles.electronNoDrag}`}
+          onClick={handleOpenProjectFile}
+        >
+          {getIcon("folder", "text-white/60")}
+        </button>
+      </Tooltip>
+    </>
+  )}
 
 				{/* Right sidebar controls */}
 				<div className={`${hudSidebarClasses} ${styles.electronNoDrag}`}>
