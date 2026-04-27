@@ -40,6 +40,12 @@ import {
 	type FigureData,
 } from "./types";
 
+// 系统字体类型定义（与 electron-env.d.ts 保持一致）
+interface SystemFont {
+	family: string;
+	fullName: string;
+}
+
 interface AnnotationSettingsPanelProps {
 	annotation: AnnotationRegion;
 	onContentChange: (content: string) => void;
@@ -75,6 +81,7 @@ export function AnnotationSettingsPanel({
 	const t = useScopedT("settings");
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [customFonts, setCustomFonts] = useState<CustomFont[]>([]);
+	const [systemFonts, setSystemFonts] = useState<SystemFont[]>([]);
 
 	const fontStyleLabels: Record<string, string> = {
 		classic: t("fontStyles.classic"),
@@ -90,6 +97,21 @@ export function AnnotationSettingsPanel({
 	// Load custom fonts on mount
 	useEffect(() => {
 		setCustomFonts(getCustomFonts());
+	}, []);
+
+	// Load system fonts on mount (Electron only)
+	useEffect(() => {
+		const loadSystemFonts = async () => {
+			if (typeof window !== "undefined" && window.electronAPI?.getSystemFonts) {
+				try {
+					const fonts = await window.electronAPI.getSystemFonts();
+					setSystemFonts(fonts);
+				} catch (error) {
+					console.error("Failed to load system fonts:", error);
+				}
+			}
+		};
+		loadSystemFonts();
 	}, []);
 
 	const colorPalette = [
@@ -247,6 +269,22 @@ export function AnnotationSettingsPanel({
 															style={{ fontFamily: font.fontFamily }}
 														>
 															{font.name}
+														</SelectItem>
+													))}
+												</>
+											)}
+											{systemFonts.length > 0 && (
+												<>
+													<div className="px-2 py-1.5 text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+														{t("annotation.systemFonts")}
+													</div>
+													{systemFonts.map((font) => (
+														<SelectItem
+															key={font.family}
+															value={font.family}
+															style={{ fontFamily: font.family }}
+														>
+															{font.family}
 														</SelectItem>
 													))}
 												</>

@@ -143,6 +143,7 @@ interface Window {
 		setHasUnsavedChanges: (hasChanges: boolean) => void;
 		onRequestSaveBeforeClose: (callback: () => Promise<boolean> | boolean) => () => void;
 		setLocale: (locale: string) => Promise<void>;
+		getSystemFonts: () => Promise<SystemFont[]>;
 	};
 }
 
@@ -158,4 +159,9 @@ interface CursorTelemetryPoint {
 	timeMs: number;
 	cx: number;
 	cy: number;
+}
+
+interface SystemFont {
+	family: string;
+	fullName: string;
 }

@@ -160,4 +160,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("request-save-before-close", listener);
 		return () => ipcRenderer.removeListener("request-save-before-close", listener);
 	},
+	getSystemFonts: () => {
+		return ipcRenderer.invoke("get-system-fonts");
+	},
 });

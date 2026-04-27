@@ -12,6 +12,7 @@ import {
 	systemPreferences,
 	Tray,
 } from "electron";
+import list from "font-list";
 import { mainT, setMainLocale } from "./i18n";
 import { registerIpcHandlers } from "./ipc/handlers";
 import {
@@ -344,17 +345,17 @@ function createCountdownOverlayWindowWrapper() {
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  app.quit();
+	app.quit();
 } else {
-  app.on("second-instance", () => {
-    showMainWindow();
-  });
+	app.on("second-instance", () => {
+		showMainWindow();
+	});
 }
 
 // On macOS, applications and their menu bar stay active until the user quits
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
-  // Keep app running (macOS behavior)
+	// Keep app running (macOS behavior)
 });
 
 app.on("activate", () => {
@@ -438,5 +439,39 @@ app.whenReady().then(async () => {
 		},
 		switchToHudWrapper,
 	);
+
+	// 获取系统字体 IPC 处理器
+	ipcMain.handle("get-system-fonts", async () => {
+		try {
+			const fonts = await list.getFonts();
+			// 解析字体名称，提取字体族名称
+			const systemFonts = fonts
+				.filter((font: string) => font && font.trim())
+				.map((font: string) => {
+					// 清理字体名称
+					const cleanName = font
+						.replace(/^["']|["']$/g, "")
+						.split(/[(),]/)[0]
+						.trim();
+
+					return {
+						family: cleanName,
+						fullName: font,
+					};
+				})
+				// 基于 family 字段去重
+				.filter(
+					(font: { family: string }, index: number, self: Array<{ family: string }>) =>
+						index === self.findIndex((f) => f.family === font.family),
+				)
+				.sort((a: { family: string }, b: { family: string }) => a.family.localeCompare(b.family));
+
+			return systemFonts;
+		} catch (error) {
+			console.error("Failed to get system fonts:", error);
+			return [];
+		}
+	});
+
 	createWindow();
 });

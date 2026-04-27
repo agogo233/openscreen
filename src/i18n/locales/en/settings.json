@@ -111,6 +111,7 @@
 		"selectStyle": "Select style",
 		"size": "Size",
 		"customFonts": "Custom Fonts",
+		"systemFonts": "System Fonts",
 		"textColor": "Text Color",
 		"background": "Background",
 		"none": "None",
