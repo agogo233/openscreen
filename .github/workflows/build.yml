@@ -30,25 +30,25 @@ jobs:
       - name: Install app dependencies
         run: npx electron-builder install-app-deps
         
-- name: Build Windows app
-  run: npm run build:win
-  env:
-    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Windows app
+        run: npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-- name: Show build output path
-  run: |
-    echo "=========================================="
-    echo "Build completed!"
-    echo "Output path: release/${{ github.event.inputs.arch }}/windows-portable/"
-    echo "=========================================="
-  shell: bash
+      - name: Show build output path
+        run: |
+          echo "=========================================="
+          echo "Build completed!"
+          echo "Output path: release/${{ github.event.inputs.arch }}/windows-portable/"
+          echo "=========================================="
+        shell: bash
 
-- name: Upload Windows build
-  uses: actions/upload-artifact@v4
-  with:
-    name: windows-portable
-    path: release/**/*.zip
-    retention-days: 30
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: release/**/*.zip
+          retention-days: 30
 
   # build-macos:
   #   runs-on: macos-latest
