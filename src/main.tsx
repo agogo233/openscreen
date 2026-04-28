@@ -15,7 +15,7 @@ if (
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <I18nProvider>
-    <App />
-  </I18nProvider>,
+	<I18nProvider>
+		<App />
+	</I18nProvider>,
 );

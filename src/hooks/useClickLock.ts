@@ -7,24 +7,24 @@ import { useCallback, useRef } from "react";
  * @returns 防抖后的处理函数
  */
 export function useDebounceCallback<T extends (...args: unknown[]) => unknown>(
-  callback: T,
-  delay: number = 300,
+	callback: T,
+	delay: number = 300,
 ): T {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+	return useCallback(
+		(...args: Parameters<T>) => {
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
 
-      timeoutRef.current = setTimeout(() => {
-        timeoutRef.current = null;
-        callback(...args);
-      }, delay);
-    },
-    [callback, delay],
-  ) as T;
+			timeoutRef.current = setTimeout(() => {
+				timeoutRef.current = null;
+				callback(...args);
+			}, delay);
+		},
+		[callback, delay],
+	) as T;
 }
 
 /**
@@ -34,25 +34,25 @@ export function useDebounceCallback<T extends (...args: unknown[]) => unknown>(
  * @returns 防重复点击的处理函数
  */
 export function useClickLock<T extends (...args: unknown[]) => unknown>(
-  callback: T,
-  cooldown: number = 300,
+	callback: T,
+	cooldown: number = 300,
 ): T {
-  const isLockedRef = useRef(false);
+	const isLockedRef = useRef(false);
 
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (isLockedRef.current) {
-        return;
-      }
+	return useCallback(
+		(...args: Parameters<T>) => {
+			if (isLockedRef.current) {
+				return;
+			}
 
-      isLockedRef.current = true;
+			isLockedRef.current = true;
 
-      Promise.resolve(callback(...args)).finally(() => {
-        setTimeout(() => {
-          isLockedRef.current = false;
-        }, cooldown);
-      });
-    },
-    [callback, cooldown],
-  ) as T;
+			Promise.resolve(callback(...args)).finally(() => {
+				setTimeout(() => {
+					isLockedRef.current = false;
+				}, cooldown);
+			});
+		},
+		[callback, cooldown],
+	) as T;
 }
