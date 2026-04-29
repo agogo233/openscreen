@@ -4,6 +4,9 @@
   "appId": "com.siddharthvaddem.openscreen",
   "publish": null,
   "asar": true,
+  "asarUnpack": [
+    "**/node_modules/font-list/**/*",
+  ],
   "productName": "Openscreen",
   "npmRebuild": true,
   "buildDependenciesFromSource": true,

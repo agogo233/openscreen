@@ -11,7 +11,11 @@ export default defineConfig({
 			main: {
 				entry: "electron/main.ts",
 				vite: {
-					build: {},
+					build: {
+						rollupOptions: {
+							external: ["font-list"],
+						},
+					},
 				},
 			},
 			preload: {
