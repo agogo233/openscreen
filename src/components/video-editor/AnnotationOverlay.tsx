@@ -2,12 +2,6 @@ import { ChevronDown, ChevronsDown, ChevronsUp, ChevronUp } from "lucide-react";
 import { type CSSProperties, type PointerEvent, useEffect, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
 	getBlurOverlayColor,
 	getMosaicGridOverlayColor,
 	getNormalizedMosaicBlockSize,
@@ -82,29 +76,33 @@ export function AnnotationOverlay({
 	onToFront,
 	onToBack,
 }: AnnotationOverlayProps) {
-	const [contextMenuOpen, setContextMenuOpen] = useState(false);
-	const contextMenuTriggerRef = useRef<HTMLButtonElement>(null);
-	const contextMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-	const handleContextMenu = (e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		onClick(annotation.id);
-		if (contextMenuTimeoutRef.current) {
-			clearTimeout(contextMenuTimeoutRef.current);
-		}
-		contextMenuTimeoutRef.current = setTimeout(() => {
-			contextMenuTriggerRef.current?.click();
-		}, 10);
-	};
+	const [showContextMenu, setShowContextMenu] = useState(false);
+	const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+	const menuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		return () => {
-			if (contextMenuTimeoutRef.current) {
-				clearTimeout(contextMenuTimeoutRef.current);
+		const handleClickOutside = (e: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+				setShowContextMenu(false);
 			}
 		};
-	}, []);
+
+		const handleEscKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setShowContextMenu(false);
+			}
+		};
+
+		if (showContextMenu) {
+			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleEscKey);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleEscKey);
+		};
+	}, [showContextMenu]);
 
 	const committedX = (annotation.position.x / 100) * containerWidth;
 	const committedY = (annotation.position.y / 100) * containerHeight;
@@ -595,7 +593,13 @@ export function AnnotationOverlay({
 					if (isDraggingRef.current) return;
 					onClick(annotation.id);
 				}}
-				onContextMenu={handleContextMenu}
+				onContextMenu={(e: React.MouseEvent) => {
+					e.preventDefault();
+					e.stopPropagation();
+					onClick(annotation.id);
+					setMenuPosition({ x: e.clientX, y: e.clientY });
+					setShowContextMenu(true);
+				}}
 				bounds="parent"
 				className={cn(
 					"cursor-move",
@@ -605,7 +609,7 @@ export function AnnotationOverlay({
 				)}
 				style={{
 					zIndex: isSelectedBoost ? zIndex + 1000 : zIndex, // Boost selected annotation to ensure it's on top
-					pointerEvents: isSelected ? "auto" : "none",
+					pointerEvents: "auto", // Always respond to mouse events for context menu
 					border:
 						isSelected && annotation.type !== "blur" ? "2px solid rgba(52, 178, 123, 0.8)" : "none",
 					backgroundColor:
@@ -674,25 +678,54 @@ export function AnnotationOverlay({
 					{renderContent()}
 				</div>
 			</Rnd>
-			<DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-				<DropdownMenuTrigger asChild>
-					<button ref={contextMenuTriggerRef} className="sr-only" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent>
-					<DropdownMenuItem onClick={onToFront}>
+			{showContextMenu && (
+				<div
+					ref={menuRef}
+					className="fixed z-[9999] min-w-[160px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+					style={{
+						left: menuPosition.x,
+						top: menuPosition.y,
+					}}
+					onClick={(e) => e.stopPropagation()}
+				>
+					<div
+						className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+						onClick={() => {
+							onToFront?.();
+							setShowContextMenu(false);
+						}}
+					>
 						<ChevronsUp className="mr-2 h-4 w-4" /> 移至最前
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={onForward}>
+					</div>
+					<div
+						className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+						onClick={() => {
+							onForward?.();
+							setShowContextMenu(false);
+						}}
+					>
 						<ChevronUp className="mr-2 h-4 w-4" /> 上移一层
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={onBackward}>
+					</div>
+					<div
+						className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+						onClick={() => {
+							onBackward?.();
+							setShowContextMenu(false);
+						}}
+					>
 						<ChevronDown className="mr-2 h-4 w-4" /> 下移一层
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={onToBack}>
+					</div>
+					<div
+						className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+						onClick={() => {
+							onToBack?.();
+							setShowContextMenu(false);
+						}}
+					>
 						<ChevronsDown className="mr-2 h-4 w-4" /> 移至最后
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
+					</div>
+				</div>
+			)}
 		</>
 	);
 }
