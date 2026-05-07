@@ -8,6 +8,14 @@
 			"manual": "Manual",
 			"auto": "Auto",
 			"autoDescription": "La cámara sigue la posición del cursor grabado"
+		},
+		"threeD": {
+			"title": "Rotación 3D",
+			"preset": {
+				"iso": "Iso",
+				"left": "Izquierda",
+				"right": "Derecha"
+			}
 		}
 	},
 	"speed": {
@@ -47,7 +55,9 @@
 		"none": "Ninguno",
 		"uploadCustom": "Subir Personalizado",
 		"gradientLabel": "Degradado {{index}}",
-		"noneDescription": "El video exportado tendrá un fondo transparente"
+		"noneDescription": "El video exportado tendrá un fondo transparente",
+		"colorWheel": "Rueda de colores",
+		"colorPalette": "Paleta de colores"
 	},
 	"crop": {
 		"title": "Recortar",
@@ -115,6 +125,8 @@
 		"background": "Fondo",
 		"none": "Ninguno",
 		"color": "Color",
+		"colorWheel": "Rueda de colores",
+		"colorPalette": "Paleta de colores",
 		"clearBackground": "Quitar fondo",
 		"uploadImage": "Subir imagen",
 		"supportedFormats": "Formatos compatibles: JPG, PNG, GIF, WebP",
