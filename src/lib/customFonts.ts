@@ -179,3 +179,97 @@ export function isValidGoogleFontsUrl(url: string): boolean {
 		return false;
 	}
 }
+
+// Query system fonts using the local() CSS function
+// This method works in modern browsers to detect available system fonts
+export async function getSystemFonts(): Promise<string[]> {
+	return new Promise((resolve) => {
+		const commonSystemFonts = [
+			"Arial",
+			"Arial Black",
+			"Helvetica",
+			"Times New Roman",
+			"Times",
+			"Courier New",
+			"Courier",
+			"Verdana",
+			"Georgia",
+			"Palatino",
+			"Garamond",
+			"Bookman",
+			"Comic Sans MS",
+			"Trebuchet MS",
+			"Arial Narrow",
+			"Impact",
+			"Lucida Console",
+			"Lucida Sans Unicode",
+			"Tahoma",
+			"Gill Sans",
+			"Geneva",
+			"Optima",
+			"Candara",
+			"Segoe UI",
+			"Roboto",
+			"Open Sans",
+			"Lato",
+			"Montserrat",
+			"Source Sans Pro",
+			"Noto Sans",
+			"Ubuntu",
+			"Oxygen",
+			"Cantarell",
+			"Fira Sans",
+			"Droid Sans",
+			"PT Sans",
+			"Franklin Gothic Medium",
+			"Cambria",
+			"Constantia",
+			"Corbel",
+			"Lucida Grande",
+			"Lucida Bright",
+			"Palatino Linotype",
+			"Book Antiqua",
+			"Didot",
+			"Century Gothic",
+			"Copperplate",
+			"Papyrus",
+			"Brush Script MT",
+			"American Typewriter",
+			"Rockwell",
+			"Baskerville",
+			"Kaiti",
+			"SimSun",
+			"SimHei",
+			"Microsoft YaHei",
+			"STXihei",
+			"Heiti SC",
+			"Songti SC",
+			"Yu Gothic",
+			"Yu Mincho",
+			"Meiryo",
+			"MS Gothic",
+			"MS Mincho",
+			"Apple SD Gothic Neo",
+			"Malgun Gothic",
+			"Gulim",
+			"Dotum",
+			"Batang",
+		];
+
+		// Use FontFace API to check which fonts are available
+		const availableFonts: string[] = [];
+
+		// Check fonts using document.fonts.check() which is more reliable
+		for (const font of commonSystemFonts) {
+			try {
+				if (document.fonts.check(`16px "${font}"`)) {
+					availableFonts.push(font);
+				}
+			} catch {
+				// Font check failed, skip
+			}
+		}
+
+		resolve(availableFonts.sort());
+	});
+}

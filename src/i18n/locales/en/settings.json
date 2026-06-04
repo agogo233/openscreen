@@ -121,8 +121,6 @@
 		"errorReading": "There was an error reading the file."
 	},
 	"annotation": {
-		"title": "Annotation Settings",
-		"active": "Active",
 		"typeText": "Text",
 		"typeImage": "Image",
 		"typeArrow": "Arrow",
@@ -131,8 +129,12 @@
 		"textPlaceholder": "Enter your text...",
 		"fontStyle": "Font Style",
 		"selectStyle": "Select style",
+		"textAnimation": "Text Animation",
+		"selectAnimation": "Select animation",
 		"size": "Size",
 		"customFonts": "Custom Fonts",
+		"systemFonts": "System Fonts",
+		"selectSystemFont": "Select System Font",
 		"textColor": "Text Color",
 		"background": "Background",
 		"none": "None",
@@ -206,6 +208,13 @@
 		"failedToAdd": "Failed to add font",
 		"errorTimeout": "Font took too long to load. Please check the URL and try again.",
 		"errorLoadFailed": "The font could not be loaded. Please verify the Google Fonts URL is correct."
+	},
+	"systemFont": {
+		"loading": "Loading system fonts...",
+		"noFontsFound": "No fonts found",
+		"errorLoadFailed": "Failed to load system fonts",
+		"selected": "Selected font \"{{fontName}}\"",
+		"helpText": "System fonts are fonts installed on your machine. These fonts will be available on all devices."
 	},
 	"cursor": {
 		"show": "Show Cursor",

@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import ColorPicker from "../ui/color-picker";
 import { AddCustomFontDialog } from "./AddCustomFontDialog";
 import { getArrowComponent } from "./ArrowSvgs";
+import { SelectSystemFontDialog } from "./SelectSystemFontDialog";
 import {
 	type AnnotationRegion,
 	type AnnotationType,
@@ -298,11 +299,16 @@ export function AnnotationSettingsPanel({
 							</div>
 
 							{/* Add Custom Font Button */}
-							<div>
+							<div className="grid grid-cols-2 gap-2">
 								<AddCustomFontDialog
 									onFontAdded={(font) => {
 										setCustomFonts(getCustomFonts());
 										onStyleChange({ fontFamily: font.fontFamily });
+									}}
+								/>
+								<SelectSystemFontDialog
+									onFontSelected={(fontFamily) => {
+										onStyleChange({ fontFamily: fontFamily });
 									}}
 								/>
 							</div>
