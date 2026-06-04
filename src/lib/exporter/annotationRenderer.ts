@@ -324,6 +324,24 @@ function renderText(
 				current = test;
 			}
 		}
+		// 处理最后一个 token：如果单个 token 本身就超出宽度，强制在字符级别拆分
+		if (current && ctx.measureText(current).width > availableWidth) {
+			let remaining = current;
+			while (remaining) {
+				let fitLength = 0;
+				for (let i = remaining.length; i > 0; i--) {
+					const test = remaining.slice(0, i);
+					if (ctx.measureText(test).width <= availableWidth) {
+						fitLength = i;
+						break;
+					}
+				}
+				if (fitLength === 0) fitLength = 1; // 至少容纳一个字符
+				lines.push(remaining.slice(0, fitLength));
+				remaining = remaining.slice(fitLength);
+			}
+			current = "";
+		}
 		if (current) lines.push(current);
 	}
 	const lineHeight = scaledFontSize * 1.4;
