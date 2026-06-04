@@ -28,6 +28,24 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// 单实例锁定：防止多个程序实例同时运行
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+	// 如果已经有实例在运行，退出当前实例
+	app.quit();
+} else {
+	// 当用户尝试启动第二个实例时，聚焦到已有窗口
+	app.on("second-instance", () => {
+		const windows = BrowserWindow.getAllWindows();
+		if (windows.length > 0) {
+			const mainWindow = windows[0];
+			if (mainWindow.isMinimized()) mainWindow.restore();
+			mainWindow.focus();
+		}
+	});
+}
+
 // Use Screen & System Audio Recording permissions instead of CoreAudio Tap API on macOS.
 // CoreAudio Tap requires NSAudioCaptureUsageDescription in the parent app's Info.plist,
 // which doesn't work when running from a terminal/IDE during development, makes my life easier
