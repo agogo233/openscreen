@@ -82,6 +82,7 @@
     "target": [
       "zip"
     ],
+    "sign": null,
     "icon": "icons/icons/win/icon.ico",
     "extraResources": [
       {
