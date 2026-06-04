@@ -205,22 +205,7 @@ export function createEditorWindow(): BrowserWindow {
 
 	// Show only once content is painted — prevents white flash on first load.
 	win.once("ready-to-show", () => {
-		console.log("[window] ready-to-show triggered, showing window");
 		if (!HEADLESS) win.show();
-	});
-
-	// Fallback: force show after 5 seconds even if ready-to-show didn't fire
-	const forceShowTimer = setTimeout(() => {
-		if (win && !win.isVisible()) {
-			console.log("[window] forcing show after timeout");
-			win.show();
-			win.focus();
-		}
-	}, 5000);
-
-	win.once("show", () => {
-		console.log("[window] window shown event");
-		clearTimeout(forceShowTimer);
 	});
 
 	// Inject dark background before any React paint so the sub-titlebar area
@@ -232,16 +217,7 @@ export function createEditorWindow(): BrowserWindow {
 	});
 
 	win.webContents.on("did-finish-load", () => {
-		console.log("[window] did-finish-load");
 		win?.webContents.send("main-process-message", new Date().toLocaleString());
-	});
-
-	win.webContents.on("did-fail-load", (_event, errorCode, errorDescription) => {
-		console.error("[window] did-fail-load:", errorCode, errorDescription);
-	});
-
-	win.webContents.on("render-process-gone", (_event, details) => {
-		console.error("[window] render-process-gone:", details.reason);
 	});
 
 	if (VITE_DEV_SERVER_URL) {
