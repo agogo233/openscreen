@@ -20,8 +20,6 @@
     "!dist/wallpapers/**/*",
     "!node_modules/**/*",
     "!**/node_modules/**/*",
-    "!*.png",
-    "!preview*.png",
     "!*.md",
     "!README.md",
     "!CONTRIBUTING.md",
