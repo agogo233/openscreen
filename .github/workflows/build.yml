@@ -2,24 +2,11 @@ name: Build Windows Portable
 
 on:
   workflow_dispatch:
-    inputs:
-      arch:
-        description: 'Architecture to build'
-        required: true
-        default: 'x64'
-        type: choice
-        options:
-          - x64
-          - arm64
 
 jobs:
   build-windows:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        arch: ${{ fromJSON(format('["{0}"]', github.event.inputs.arch)) }}
-    
-    name: Build Windows (${{ matrix.arch }})
+    name: Build Windows (x64)
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -32,8 +19,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Windows app
-        run: npm run build:win -- --${{ matrix.arch }}
+      - name: Build Windows x64 app
+        run: npm run build:win -- --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
@@ -41,14 +28,14 @@ jobs:
         run: |
           echo "=========================================="
           echo "Build completed!"
-          echo "Output path: release/${{ github.event.inputs.arch }}/windows-portable/"
+          echo "Output path: release/"
           echo "=========================================="
         shell: bash
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable-${{ matrix.arch }}
+          name: windows-portable-x64
           path: release/**/*.zip
           retention-days: 30
           if-no-files-found: ignore
