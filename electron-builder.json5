@@ -10,7 +10,7 @@
   "productName": "Openscreen",
   "npmRebuild": true,
   "buildDependenciesFromSource": true,
-  "compression": "maximum",
+  "compression": "normal",
   "directories": {
     "output": "release/${version}"
   },
