@@ -15,10 +15,11 @@
     "output": "release/${version}"
   },
   "files": [
-    "dist",
-    "dist-electron",
-    "!**/node_modules",
-    "!**/node_modules/*",
+    "dist/**/*",
+    "dist-electron/**/*",
+    "!dist/wallpapers/**/*",
+    "!node_modules/**/*",
+    "!**/node_modules/**/*",
     "!*.png",
     "!preview*.png",
     "!*.md",
