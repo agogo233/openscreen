@@ -40,6 +40,10 @@
     "entitlementsInherit": "macos.entitlements",
     "target": [
       {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
+      },
+      {
         "target": "dmg",
         "arch": ["x64", "arm64"]
       }
@@ -63,6 +67,7 @@
   },
   "linux": {
     "target": [
+      "zip",
       "AppImage",
       "deb",
       "pacman"
@@ -73,7 +78,7 @@
   },
   "win": {
     "target": [
-      "nsis"
+      "zip"
     ],
     "icon": "icons/icons/win/icon.ico",
     "extraResources": [
