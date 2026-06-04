@@ -7,6 +7,7 @@ import {
 	Gauge,
 	MessageSquare,
 	Plus,
+	ScanEye,
 	Scissors,
 	WandSparkles,
 	ZoomIn,
@@ -28,20 +29,13 @@ import { matchesShortcut } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 import { ASPECT_RATIOS, type AspectRatio, getAspectRatioLabel } from "@/utils/aspectRatioUtils";
 import { formatShortcut } from "@/utils/platformUtils";
-import type {
-	AnnotationRegion,
-	CursorTelemetryPoint,
-	SpeedRegion,
-	TrimRegion,
-	ZoomFocus,
-	ZoomRegion,
-} from "../types";
+import { BLUR_REGIONS_ENABLED } from "../featureFlags";
+import type { AnnotationRegion, SpeedRegion, TrimRegion, ZoomRegion } from "../types";
 import BackgroundWaveform from "./BackgroundWaveform";
 import Item from "./Item";
 import KeyframeMarkers from "./KeyframeMarkers";
 import Row from "./Row";
 import TimelineWrapper from "./TimelineWrapper";
-import { detectZoomDwellCandidates, normalizeCursorTelemetry } from "./zoomSuggestionUtils";
 
 const ZOOM_ROW_ID = "row-zoom";
 const TRIM_ROW_ID = "row-trim";
@@ -50,17 +44,20 @@ const BLUR_ROW_ID = "row-blur";
 const SPEED_ROW_ID = "row-speed";
 const FALLBACK_RANGE_MS = 1000;
 const TARGET_MARKER_COUNT = 12;
-const SUGGESTION_SPACING_MS = 1800;
 
 interface TimelineEditorProps {
 	videoDuration: number;
 	hasVideoSource?: boolean;
 	currentTime: number;
 	onSeek?: (time: number) => void;
-	cursorTelemetry?: CursorTelemetryPoint[];
 	zoomRegions: ZoomRegion[];
 	onZoomAdded: (span: Span) => void;
-	onZoomSuggested?: (span: Span, focus: ZoomFocus) => void;
+	/** Magic-wand auto-zoom toggle state + handler. */
+	autoZoomEnabled?: boolean;
+	onToggleAutoZoom?: (enabled: boolean) => void;
+	/** Global Auto-Focus toggle state + handler. */
+	autoFocusAll?: boolean;
+	onToggleAutoFocusAll?: (on: boolean) => void;
 	onZoomSpanChange: (id: string, span: Span) => void;
 	onZoomDelete: (id: string) => void;
 	selectedZoomId: string | null;
@@ -853,21 +850,23 @@ function Timeline({
 				))}
 			</Row>
 
-			<Row id={BLUR_ROW_ID} isEmpty={blurItems.length === 0} hint={t("hints.pressBlur")}>
-				{blurItems.map((item) => (
-					<Item
-						id={item.id}
-						key={item.id}
-						rowId={item.rowId}
-						span={item.span}
-						isSelected={item.id === selectedBlurId}
-						onSelect={() => onSelectBlur?.(item.id)}
-						variant={item.variant}
-					>
-						{item.label}
-					</Item>
-				))}
-			</Row>
+			{BLUR_REGIONS_ENABLED && (
+				<Row id={BLUR_ROW_ID} isEmpty={blurItems.length === 0} hint={t("hints.pressBlur")}>
+					{blurItems.map((item) => (
+						<Item
+							id={item.id}
+							key={item.id}
+							rowId={item.rowId}
+							span={item.span}
+							isSelected={item.id === selectedBlurId}
+							onSelect={() => onSelectBlur?.(item.id)}
+							variant={item.variant}
+						>
+							{item.label}
+						</Item>
+					))}
+				</Row>
+			)}
 
 			<Row id={SPEED_ROW_ID} isEmpty={speedItems.length === 0} hint={t("hints.pressSpeed")}>
 				{speedItems.map((item) => (
@@ -894,10 +893,12 @@ export default function TimelineEditor({
 	hasVideoSource = false,
 	currentTime,
 	onSeek,
-	cursorTelemetry = [],
 	zoomRegions,
 	onZoomAdded,
-	onZoomSuggested,
+	autoZoomEnabled = true,
+	onToggleAutoZoom,
+	autoFocusAll = false,
+	onToggleAutoFocusAll,
 	onZoomSpanChange,
 	onZoomDelete,
 	selectedZoomId,
@@ -1156,103 +1157,6 @@ export default function TimelineEditor({
 		onZoomAdded({ start: startPos, end: startPos + actualDuration });
 	}, [videoDuration, totalMs, currentTimeMs, zoomRegions, onZoomAdded, defaultRegionDurationMs, t]);
 
-	const handleSuggestZooms = useCallback(() => {
-		if (!videoDuration || videoDuration === 0 || totalMs === 0) {
-			return;
-		}
-
-		if (!onZoomSuggested) {
-			toast.error(t("errors.zoomSuggestionUnavailable"));
-			return;
-		}
-
-		if (cursorTelemetry.length < 2) {
-			toast.info(t("errors.noCursorTelemetry"), {
-				description: t("errors.noCursorTelemetryDescription"),
-			});
-			return;
-		}
-
-		const defaultDuration = Math.min(defaultRegionDurationMs, totalMs);
-		if (defaultDuration <= 0) {
-			return;
-		}
-
-		const reservedSpans = [...zoomRegions]
-			.map((region) => ({ start: region.startMs, end: region.endMs }))
-			.sort((a, b) => a.start - b.start);
-
-		const normalizedSamples = normalizeCursorTelemetry(cursorTelemetry, totalMs);
-
-		if (normalizedSamples.length < 2) {
-			toast.info(t("errors.noUsableTelemetry"), {
-				description: t("errors.noUsableTelemetryDescription"),
-			});
-			return;
-		}
-
-		const dwellCandidates = detectZoomDwellCandidates(normalizedSamples);
-
-		if (dwellCandidates.length === 0) {
-			toast.info(t("errors.noDwellMoments"), {
-				description: t("errors.noDwellMomentsDescription"),
-			});
-			return;
-		}
-
-		const sortedCandidates = [...dwellCandidates].sort((a, b) => b.strength - a.strength);
-		const acceptedCenters: number[] = [];
-
-		let addedCount = 0;
-
-		sortedCandidates.forEach((candidate) => {
-			const tooCloseToAccepted = acceptedCenters.some(
-				(center) => Math.abs(center - candidate.centerTimeMs) < SUGGESTION_SPACING_MS,
-			);
-
-			if (tooCloseToAccepted) {
-				return;
-			}
-
-			const centeredStart = Math.round(candidate.centerTimeMs - defaultDuration / 2);
-			const candidateStart = Math.max(0, Math.min(centeredStart, totalMs - defaultDuration));
-			const candidateEnd = candidateStart + defaultDuration;
-			const hasOverlap = reservedSpans.some(
-				(span) => candidateEnd > span.start && candidateStart < span.end,
-			);
-
-			if (hasOverlap) {
-				return;
-			}
-
-			reservedSpans.push({ start: candidateStart, end: candidateEnd });
-			acceptedCenters.push(candidate.centerTimeMs);
-			onZoomSuggested({ start: candidateStart, end: candidateEnd }, candidate.focus);
-			addedCount += 1;
-		});
-
-		if (addedCount === 0) {
-			toast.info(t("errors.noAutoZoomSlots"), {
-				description: t("errors.noAutoZoomSlotsDescription"),
-			});
-			return;
-		}
-
-		toast.success(
-			addedCount === 1
-				? t("success.addedZoomSuggestions", { count: String(addedCount) })
-				: t("success.addedZoomSuggestionsPlural", { count: String(addedCount) }),
-		);
-	}, [
-		videoDuration,
-		totalMs,
-		defaultRegionDurationMs,
-		zoomRegions,
-		onZoomSuggested,
-		cursorTelemetry,
-		t,
-	]);
-
 	const handleAddTrim = useCallback(() => {
 		if (!videoDuration || videoDuration === 0 || totalMs === 0 || !onTrimAdded) {
 			return;
@@ -1375,7 +1279,7 @@ export default function TimelineEditor({
 			if (matchesShortcut(e, keyShortcuts.addAnnotation, isMac)) {
 				handleAddAnnotation();
 			}
-			if (matchesShortcut(e, keyShortcuts.addBlur, isMac)) {
+			if (BLUR_REGIONS_ENABLED && matchesShortcut(e, keyShortcuts.addBlur, isMac)) {
 				handleAddBlur();
 			}
 			if (matchesShortcut(e, keyShortcuts.addSpeed, isMac)) {
@@ -1614,13 +1518,30 @@ export default function TimelineEditor({
 						<ZoomIn className="w-4 h-4" />
 					</Button>
 					<Button
-						onClick={handleSuggestZooms}
+						onClick={() => onToggleAutoZoom?.(!autoZoomEnabled)}
 						variant="ghost"
 						size="icon"
-						className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#34B27B] hover:bg-[#34B27B]/10 transition-all"
-						title={t("buttons.suggestZooms")}
+						aria-pressed={autoZoomEnabled}
+						className={cn(
+							"h-7 w-7 rounded-lg transition-all hover:bg-[#34B27B]/10 hover:text-[#34B27B]",
+							autoZoomEnabled ? "bg-[#34B27B]/15 text-[#34B27B]" : "text-slate-400",
+						)}
+						title={autoZoomEnabled ? t("buttons.autoZoomOn") : t("buttons.autoZoomOff")}
 					>
 						<WandSparkles className="w-4 h-4" />
+					</Button>
+					<Button
+						onClick={() => onToggleAutoFocusAll?.(!autoFocusAll)}
+						variant="ghost"
+						size="icon"
+						aria-pressed={autoFocusAll}
+						className={cn(
+							"h-7 w-7 rounded-lg transition-all hover:bg-[#34B27B]/10 hover:text-[#34B27B]",
+							autoFocusAll ? "bg-[#34B27B]/15 text-[#34B27B]" : "text-slate-400",
+						)}
+						title={autoFocusAll ? t("buttons.autoFocusAllOn") : t("buttons.autoFocusAllOff")}
+					>
+						<ScanEye className="w-4 h-4" />
 					</Button>
 					<Button
 						onClick={handleAddTrim}
@@ -1640,25 +1561,27 @@ export default function TimelineEditor({
 					>
 						<MessageSquare className="w-4 h-4" />
 					</Button>
-					<Button
-						onClick={handleAddBlur}
-						variant="ghost"
-						size="icon"
-						className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#7dd3fc] hover:bg-[#7dd3fc]/10 transition-all"
-						title={t("buttons.addBlur")}
-					>
-						<svg
-							className="w-4 h-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
+					{BLUR_REGIONS_ENABLED && (
+						<Button
+							onClick={handleAddBlur}
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#7dd3fc] hover:bg-[#7dd3fc]/10 transition-all"
+							title={t("buttons.addBlur")}
 						>
-							<circle cx="8" cy="12" r="3" />
-							<circle cx="16" cy="12" r="3" />
-							<path d="M6 6h12M6 18h12" />
-						</svg>
-					</Button>
+							<svg
+								className="w-4 h-4"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+							>
+								<circle cx="8" cy="12" r="3" />
+								<circle cx="16" cy="12" r="3" />
+								<path d="M6 6h12M6 18h12" />
+							</svg>
+						</Button>
+					)}
 					<Button
 						onClick={handleAddSpeed}
 						variant="ghost"
