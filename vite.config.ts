@@ -57,6 +57,7 @@ export default defineConfig({
 		rollupOptions: {
 			output: {
 				manualChunks(id) {
+					if (id.includes("node_modules/@xenova/transformers")) return "transformers";
 					if (id.includes("pixi.js") || id.includes("pixi-filters") || id.includes("@pixi/"))
 						return "pixi";
 					if (id.includes("react-dom") || id.includes("/react/")) return "react-vendor";
@@ -70,5 +71,9 @@ export default defineConfig({
 			},
 		},
 		chunkSizeWarningLimit: 1000,
+		modulePreload: {
+			// Don't inject module preload links automatically - we'll control them manually
+			polyfill: false,
+		},
 	},
 });
