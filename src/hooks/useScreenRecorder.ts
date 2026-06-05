@@ -762,6 +762,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		runId === undefined || countdownRunId.current === runId;
 
 	const waitForWebcamReady = async () => {
+		if (!webcamEnabled) {
+			return;
+		}
 		if (webcamReady.current) {
 			return;
 		}
@@ -812,7 +815,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			const sourceType = selectedSource.id.startsWith("window:") ? "window" : "display";
 			const windowHandle = parseWindowHandleFromSourceId(selectedSource.id);
 			if (webcamEnabled) {
-				await waitForWebcamReady();
+				void waitForWebcamReady();
 				if (!isCountdownRunActive(countdownRunToken)) {
 					return true;
 				}
@@ -930,18 +933,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			let nativeWebcamRecorder: RecorderHandle | null = null;
 			if (webcamEnabled) {
 				if (!webcamReady.current) {
-					await new Promise<void>((resolve) => {
-						const interval = setInterval(() => {
-							if (webcamReady.current) {
-								clearInterval(interval);
-								resolve();
-							}
-						}, 50);
-						setTimeout(() => {
-							clearInterval(interval);
-							resolve();
-						}, 5000);
-					});
+					void waitForWebcamReady();
 				}
 				if (!isCountdownRunActive(countdownRunToken)) {
 					return true;
@@ -1066,25 +1058,77 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			return;
 		}
 
-		try {
-			const platform = await window.electronAPI.getPlatform();
-			if (platform === "darwin" && cursorCaptureMode === "editable-overlay") {
-				// The main process shows a native dialog that deep-links to the
-				// Accessibility settings pane when access is missing, so we just stop
-				// here and let the user grant it and press record again.
-				const access = await window.electronAPI.requestNativeMacCursorAccess();
-				if (!access.granted) {
-					return;
-				}
-			}
-		} catch (error) {
-			console.warn("Failed to preflight macOS cursor accessibility before countdown:", error);
-		}
-
 		if (!isCountdownRunActive(runId)) {
 			return;
 		}
 
+		// Pre-initialize screen capture stream DURING countdown so it's ready
+		// when countdown ends — eliminates 2-3 second getDisplayMedia delay.
+		const preinitializeScreenStream = async () => {
+			try {
+				const platform = await window.electronAPI.getPlatform();
+				let stream: MediaStream | null = null;
+
+				if (platform === "win32") {
+					stream = await navigator.mediaDevices.getDisplayMedia({
+						video: {
+							cursor: cursorCaptureMode === "editable-overlay" ? "never" : "always",
+							width: { max: TARGET_WIDTH },
+							height: { max: TARGET_HEIGHT },
+							frameRate: { ideal: TARGET_FRAME_RATE },
+						} as MediaTrackConstraints,
+						audio: systemAudioEnabled,
+					} as DisplayMediaStreamOptions);
+				} else {
+					const videoConstraints = {
+						mandatory: {
+							chromeMediaSource: CHROME_MEDIA_SOURCE,
+							chromeMediaSourceId: selectedSource.id,
+							maxWidth: TARGET_WIDTH,
+							maxHeight: TARGET_HEIGHT,
+							maxFrameRate: TARGET_FRAME_RATE,
+							minFrameRate: MIN_FRAME_RATE,
+						},
+					};
+
+					if (systemAudioEnabled) {
+						try {
+							stream = await navigator.mediaDevices.getUserMedia({
+								audio: {
+									mandatory: {
+										chromeMediaSource: CHROME_MEDIA_SOURCE,
+										chromeMediaSourceId: selectedSource.id,
+									},
+								},
+								video: videoConstraints,
+							} as unknown as MediaStreamConstraints);
+						} catch (audioErr) {
+							console.warn("System audio capture failed, falling back to video-only:", audioErr);
+							toast.error(t("recording.systemAudioUnavailable"));
+							stream = await navigator.mediaDevices.getUserMedia({
+								audio: false,
+								video: videoConstraints,
+							} as unknown as MediaStreamConstraints);
+						}
+					} else {
+						stream = await navigator.mediaDevices.getUserMedia({
+							audio: false,
+							video: videoConstraints,
+						} as unknown as MediaStreamConstraints);
+					}
+				}
+
+				if (stream) {
+					screenStream.current = stream;
+					console.log("[prefetch] Screen capture stream pre-initialized");
+				}
+			} catch (error) {
+				console.warn("[prefetch] Screen capture prefetch failed:", error);
+				// Ignore prefetch errors — will retry on actual start
+			}
+		};
+
+		// Start prefetching screen capture in the background after countdown shows
 		setCountdownActive(true);
 
 		let overlayHiddenBeforeStart = false;
@@ -1095,6 +1139,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			if (countdownRunId.current !== runId) {
 				return;
 			}
+
+			// Prefetch screen stream during countdown
+			void preinitializeScreenStream();
 
 			for (const value of values) {
 				if (countdownRunId.current !== runId) {
@@ -1153,13 +1200,16 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				return;
 			}
 
+			// Use pre-initialized stream if available (from countdown prefetch)
 			let screenMediaStream: MediaStream;
 			const platform = await window.electronAPI.getPlatform();
 
-			if (platform === "win32") {
-				// getDisplayMedia + setDisplayMediaRequestHandler (main.ts) supplies the
-				// pre-selected source. Editable cursor mode excludes the system cursor so
-				// the editor can render a replacement; system mode bakes it into the video.
+			if (screenStream.current && screenStream.current.getVideoTracks().length > 0) {
+				// Reuse pre-initialized stream — eliminates 2-3 second delay
+				screenMediaStream = screenStream.current;
+				console.log("[startRecording] Reusing pre-initialized screen capture stream");
+			} else if (platform === "win32") {
+				// Prefetch failed or wasn't run — initialize now
 				screenMediaStream = await navigator.mediaDevices.getDisplayMedia({
 					video: {
 						cursor: cursorCaptureMode === "editable-overlay" ? "never" : "always",
@@ -1207,7 +1257,6 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					} as unknown as MediaStreamConstraints);
 				}
 			}
-			screenStream.current = screenMediaStream;
 
 			if (!isCountdownRunActive(countdownRunToken)) {
 				teardownMedia();
@@ -1245,18 +1294,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 			if (webcamEnabled) {
 				if (!webcamReady.current) {
-					await new Promise<void>((resolve) => {
-						const interval = setInterval(() => {
-							if (webcamReady.current) {
-								clearInterval(interval);
-								resolve();
-							}
-						}, 50);
-						setTimeout(() => {
-							clearInterval(interval);
-							resolve();
-						}, 5000);
-					});
+					void waitForWebcamReady();
 				}
 				if (!webcamStream.current) {
 					webcamAcquireId.current++;
