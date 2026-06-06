@@ -101,10 +101,4 @@
     ],
     "artifactName": "${productName}-Windows-${arch}-${version}-portable.${ext}"
   }
-    ]
-  },
-  "nsis": {
-    "oneClick": false,
-    "allowToChangeInstallationDirectory": true
-  }
 }
