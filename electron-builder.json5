@@ -22,12 +22,17 @@
   "files": [
     "dist",
     "dist-electron",
-    "!*.png",
-    "!preview*.png",
-    "!*.md",
-    "!README.md",
-    "!CONTRIBUTING.md",
-    "!LICENSE"
+    "**/package.json",
+    "!**/*.map",
+    "!**/*.d.ts",
+    "!**/README.md",
+    "!**/CHANGELOG.md",
+    "!**/LICENSE",
+    "!**/LICENSE*",
+    "!**/*.md",
+    "!**/*.png",
+    "!**/preview*.png",
+    "!node_modules/**/*"
   ],
   // Asset layout contract: "wallpapers/" and "cursors/" under resourcesPath must
   // align with assetBaseDir in electron/preload.ts (packaged branch).

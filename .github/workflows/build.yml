@@ -24,6 +24,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
+      - name: Show build artifacts size
+        run: |
+          echo "=========================================="
+          echo "Build completed! Checking sizes..."
+          echo "=========================================="
+          echo "=== dist/ size ==="
+          du -sh dist/* 2>/dev/null | sort -hr || echo "dist/ not found"
+          echo ""
+          echo "=== release/ size ==="
+          if [ -d "release" ]; then
+            du -sh release/* 2>/dev/null | sort -hr
+            echo ""
+            echo "=== .zip file size ==="
+            find release -name "*.zip" -exec du -sh {} \; 2>/dev/null | sort -hr
+          else
+            echo "release/ not found"
+          fi
+        shell: bash
+      
       - name: Show build output path
         run: |
           echo "=========================================="
