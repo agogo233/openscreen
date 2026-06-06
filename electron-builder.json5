@@ -20,18 +20,17 @@
     "output": "release/${version}"
   },
   "files": [
-    "dist",
-    "dist-electron",
+    "dist/**/*",
+    "dist-electron/**/*",
     "**/package.json",
     "!**/*.map",
     "!**/*.d.ts",
+    "!**/*.md",
     "!**/README.md",
     "!**/CHANGELOG.md",
     "!**/LICENSE",
     "!**/LICENSE*",
-    "!**/*.md",
-    "!**/*.png",
-    "!**/preview*.png",
+    "!**/*.log",
     "!node_modules/**/*"
   ],
   // Asset layout contract: "wallpapers/" and "cursors/" under resourcesPath must
