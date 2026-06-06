@@ -10,7 +10,7 @@
   "productName": "Openscreen",
   // Fetch the auto-caption model + ORT wasm into caption-assets/ before packaging (idempotent).
   "beforePack": "scripts/before-pack.cjs",
-  "npmRebuild": true,
+  "npmRebuild": false,
   // sharp ships ABI-stable (napi) prebuilt binaries with bundled libvips. Building it from source
   // needs a system libvips we don't provide and breaks on CI/local ("vips-cpp.42 not found"), so we
   // let electron-builder use the prebuilt instead of recompiling.
@@ -86,7 +86,10 @@
   },
   "win": {
     "target": [
-      "nsis"
+      {
+        "target": "zip",
+        "arch": ["x64"]
+      }
     ],
     "icon": "icons/icons/win/icon.ico",
     "extraResources": [
@@ -95,6 +98,9 @@
         "to": "electron/native/bin",
         "filter": ["win32-*/*"]
       }
+    ],
+    "artifactName": "${productName}-Windows-${arch}-${version}-portable.${ext}"
+  }
     ]
   },
   "nsis": {

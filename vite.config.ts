@@ -66,6 +66,8 @@ export default defineConfig({
 						id.includes("fix-webm-duration")
 					)
 						return "video-processing";
+					// transformers.js for auto-captions (lazy-loaded, not preloaded)
+					if (id.includes("@xenova/transformers")) return "transformers";
 				},
 			},
 		},
